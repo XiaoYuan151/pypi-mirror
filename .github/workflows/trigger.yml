@@ -1,0 +1,61 @@
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Limit'
+        type: number
+        required: true
+      timeout:
+        description: 'Timeout'
+        required: true
+        type: number
+        default: 40
+
+concurrency: trigger
+
+name: Trigger
+
+jobs:
+  trigger:
+    name: Trigger workflow
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: main
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
+      - name: Run action
+        uses: pypi-data/internal-toolchain/actions/trigger@main
+        timeout-minutes: ${{ fromJson(inputs.timeout) }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workspace: ${{ github.workspace }}
+          run-id: ${{ github.run_number }}
+          limit: ${{ inputs.limit }}
+
+  update_readme:
+    name: Update readme
+    runs-on: ubuntu-latest
+    needs: [ trigger ]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: main
+      - name: Run action
+        uses: pypi-data/internal-toolchain/actions/update-readme@main
+        with:
+          workspace: ${{ github.workspace }}
+
+  update_index:
+    name: Update Index
+    runs-on: ubuntu-latest
+    needs: [ trigger ]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: main
+      - name: Run action
+        uses: pypi-data/internal-toolchain/actions/update-index@main
+        with:
+          workspace: ${{ github.workspace }}
+          token: ${{ secrets.GITHUB_TOKEN }}

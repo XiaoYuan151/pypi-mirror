@@ -1,0 +1,27 @@
+on:
+  workflow_dispatch:
+    inputs:
+      args:
+        description: 'Args to pass to misc workflow'
+        type: string
+        required: true
+
+concurrency: trigger
+
+name: Run misc jobs
+
+jobs:
+  misc:
+    name: Trigger misc
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: main
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
+      - name: Run action
+        uses: pypi-data/internal-toolchain/actions/misc@main
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          workspace: ${{ github.workspace }}
+          run-id: ${{ github.run_number }}
